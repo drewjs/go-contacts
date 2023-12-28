@@ -1,0 +1,106 @@
+{{ block "index" . }}
+    <!doctype html>
+    <html lang="en">
+        <head>
+            <meta charset="UTF-8" />
+            <meta
+                name="viewport"
+                content="width=device-width, initial-scale=1.0"
+            />
+            <title>contacts</title>
+            <link rel="stylesheet" href="/css/index.css" />
+            <script src="https://unpkg.com/htmx.org/dist/htmx.min.js"></script>
+        </head>
+        <body>
+            {{ template "contact-form" .Form }}
+            <hr />
+            {{ template "contact-list" .Data }}
+            <script>
+                document.addEventListener('DOMContentLoaded', (e) => {
+                    document.body.addEventListener('htmx:beforeSwap', (evt) => {
+                        if (evt.detail.xhr.status === 422) {
+                            evt.detail.shouldSwap = true
+                            evt.detail.isError = false
+                        }
+                    })
+                })
+            </script>
+        </body>
+    </html>
+{{ end }}
+
+{{ block "contact-form" . }}
+    <form hx-post="/contacts" hx-swap="outerHTML">
+        <div>
+            Name:
+            <input
+                type="text"
+                name="name"
+                {{ if .Values.name }}
+                    value="{{ .Values.name }}"
+                {{ end }}
+            />
+            {{ if .Errors.name }}
+                <div style="color: red">{{ .Errors.name }}</div>
+            {{ end }}
+        </div>
+        <div>
+            Email:
+            <input
+                type="text"
+                name="email"
+                {{ if .Values.email }}
+                    value="{{ .Values.email }}"
+                {{ end }}
+            />
+            {{ if .Errors.email }}
+                <div style="color: red">{{ .Errors.email }}</div>
+            {{ end }}
+        </div>
+        <button type="submit">Create Contact</button>
+    </form>
+{{ end }}
+
+{{ block "contact" . }}
+    <div
+        id="contact-{{ .Id }}"
+        class="contact"
+        style="display: flex; align-items: center; gap: .75rem"
+    >
+        <div>Name: <span>{{ .Name }}</span></div>
+        <div>Email: <span>{{ .Email }}</span></div>
+        <button
+            hx-indicator="#ci-{{ .Id }}"
+            hx-delete="/contacts/{{ .Id }}"
+            hx-target="#contact-{{ .Id }}"
+            hx-swap="outerHTML swap:200ms"
+            style="appearance: none; cursor: pointer; background: none; border: none; color: red; width: 1rem; height: 1rem; text-align: center;"
+        >
+            X
+        </button>
+        <img
+            id="ci-{{ .Id }}"
+            src="/images/bars.svg"
+            alt="loading"
+            class="htmx-indicator"
+            style="width: 1rem; height: 1rem"
+        />
+    </div>
+{{ end }}
+
+{{ block "contact-list" . }}
+    <ul
+        id="contacts"
+        style="display: flex; flex-direction: column; gap: .5rem; margin: 0; padding: 0;"
+    >
+        {{ range .Contacts }}
+            {{ template "contact" . }}
+        {{ end }}
+    </ul>
+{{ end }}
+
+{{ block "oob-contact" . }}
+    <li id="contacts" hx-swap-oob="afterbegin">
+        {{ template "contact" . }}
+    </li>
+{{ end }}
